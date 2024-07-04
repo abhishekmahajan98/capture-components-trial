@@ -10,7 +10,7 @@ import logging
 import tempfile
 
 # Use a temporary directory or specify a writable directory
-UPLOAD_DIRECTORY = os.path.join(os.path.dirname(__file__), "uploads")
+UPLOAD_DIRECTORY = tempfile.gettempdir()
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
