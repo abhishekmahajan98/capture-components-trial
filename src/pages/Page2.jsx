@@ -1,10 +1,56 @@
-// pages/Page1.jsx
-import React from 'react';
+import React, { useState } from 'react';
+import { Upload, Button, message } from 'antd';
+import { UploadOutlined } from '@ant-design/icons';
 
 const Page2 = () => {
+  const [fileList, setFileList] = useState([]);
+
+  const handleChange = ({ fileList }) => {
+    setFileList(fileList);
+  };
+
+  const handleUpload = async () => {
+    const formData = new FormData();
+    fileList.forEach((file) => {
+      formData.append('files', file.originFileObj);
+    });
+
+    try {
+      const response = await fetch('http://0.0.0.0:8000/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        message.success('Upload successful');
+        setFileList([]);
+      } else {
+        message.error('Upload failed');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      message.error('Upload failed');
+    }
+  };
+
   return (
     <div>
-      <h1>Page 2</h1>
+      <Upload
+        multiple
+        beforeUpload={() => false}
+        onChange={handleChange}
+        fileList={fileList}
+      >
+        <Button icon={<UploadOutlined />}>Select Files</Button>
+      </Upload>
+      <Button
+        type="primary"
+        onClick={handleUpload}
+        disabled={fileList.length === 0}
+        style={{ marginTop: 16 }}
+      >
+        Submit
+      </Button>
     </div>
   );
 };
