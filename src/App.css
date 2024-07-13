@@ -26,3 +26,61 @@
 .rec-page-button{
   padding-left: 1rem;
 }
+
+.ant-picker {
+  border-color: red;
+  background-color: #555;
+}
+.ant-picker:hover,
+.ant-picker-focused {
+  border-color: #EDA33A!important;
+  background-color: #555;
+}
+/* value placeholder */
+.ant-picker-input > input {
+  color: white!important;
+}
+/* claendar */
+.ant-picker-panel-container {
+  background-color: #555 !important;
+}
+/* for text */
+.ant-picker-content th,
+.ant-picker-content td {
+  color: white !important;
+}
+/* the selected date css */
+.ant-picker-cell-in-view.ant-picker-cell-selected .ant-picker-cell-inner,
+.ant-picker-cell-in-view.ant-picker-cell-range-start .ant-picker-cell-inner,
+.ant-picker-cell-in-view.ant-picker-cell-range-end .ant-picker-cell-inner {
+  background-color: yellow !important;
+  color: black !important;
+}
+/* today's date in calender border */
+.ant-picker-cell-in-view.ant-picker-cell-today .ant-picker-cell-inner::before {
+  border-color: yellow !important;
+}
+
+.ant-picker-header-view,
+.ant-picker-header button,
+.ant-picker-today-btn {
+  color: white !important;
+}
+.ant-picker-header button:hover,
+.ant-picker-header-view:hover,
+.ant-picker-today-btn:hover {
+  color: yellow !important;
+}
+.ant-picker-header {
+  border-bottom: 1px solid #555;
+}
+.ant-picker-footer {
+  border-top: 1px solid #555;
+}
+/* today text */
+.ant-picker-now-btn {
+  color: white !important;
+}
+.ant-picker-now-btn:hover {
+  color: yellow !important;
+}

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Upload, Button, message } from 'antd';
+import { Upload, Button, message ,DatePicker} from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
-
+import '../App.css';
 const Page2 = () => {
   const [fileList, setFileList] = useState([]);
 
@@ -24,7 +24,7 @@ const Page2 = () => {
       if (response.ok) {
         message.success('Upload successful');
         setFileList([]);
-      } else {
+      } else { 
         message.error('Upload failed');
       }
     } catch (error) {
@@ -51,6 +51,7 @@ const Page2 = () => {
       >
         Submit
       </Button>
+      <DatePicker />
     </div>
   );
 };
