@@ -87,7 +87,7 @@ const Page2 = () => {
       </Button>
       <DatePicker />
       <div>
-      <DateRange from="2024-07-15" to="2024-07-20" />
+      <DateRange from="2024-07-15" to="2024-08-20" />
     </div>
     </div>
   );
