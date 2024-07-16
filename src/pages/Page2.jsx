@@ -2,6 +2,40 @@ import React, { useState } from 'react';
 import { Upload, Button, message ,DatePicker} from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
 import '../App.css';
+
+
+
+function DateRange({ from, to }) {
+  const generateDateList = (start, end) => {
+    const fromDate = new Date(start);
+    const toDate = new Date(end);
+    const dates = [];
+
+    let currentDate = new Date(fromDate);
+
+    while (currentDate <= toDate) {
+      dates.push(currentDate.toISOString().split('T')[0]);
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return dates;
+  };
+
+  const dateList = generateDateList(from, to);
+
+  return (
+    <div>
+      <h2>Dates between {from} and {to}:</h2>
+      <ul>
+        {dateList.map((date, index) => (
+          <li key={index}>{date}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+
 const Page2 = () => {
   const [fileList, setFileList] = useState([]);
 
@@ -52,6 +86,9 @@ const Page2 = () => {
         Submit
       </Button>
       <DatePicker />
+      <div>
+      <DateRange from="2024-07-15" to="2024-07-20" />
+    </div>
     </div>
   );
 };
