@@ -1,0 +1,43 @@
+Based on your description, it sounds like you're experiencing a common issue with single-page applications (SPAs) hosted on Azure App Service. This typically occurs because the server is not configured to handle client-side routing properly. Here's how you can resolve this issue:
+
+1. Create a web.config file in your project's public directory (if it doesn't exist already)[2]. This file will configure the server to redirect all requests to your index.html file, allowing your React Router to handle the routing.
+
+2. Add the following content to your web.config file[2]:
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <system.webServer>
+    <rewrite>
+      <rules>
+        <rule name="React Routes" stopProcessing="true">
+          <match url=".*" />
+          <conditions logicalGrouping="MatchAll">
+            <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="true" />
+            <add input="{REQUEST_FILENAME}" matchType="IsDirectory" negate="true" />
+            <add input="{REQUEST_URI}" pattern="^/(api)" negate="true" />
+          </conditions>
+          <action type="Rewrite" url="/" />
+        </rule>
+      </rules>
+    </rewrite>
+  </system.webServer>
+</configuration>
+```
+
+3. Make sure this web.config file is included in your build output. If you're using Vite, you may need to configure it to copy this file to the build directory[1].
+
+4. After making these changes, rebuild your project and redeploy it to Azure App Service.
+
+This configuration tells the server to redirect all requests that don't match a file or directory to the root (index.html), allowing your React Router to handle the routing on the client side[2].
+
+If you're still experiencing issues after implementing this solution, you may want to check your Vite configuration and ensure that your build process is correctly handling assets and routes[1][4]. Also, verify that your Azure App Service is configured to run a Node.js application if you're using server-side rendering.
+
+Remember to test thoroughly after making these changes to ensure all your routes are working as expected.
+
+Citations:
+[1] https://www.reddit.com/r/reactjs/comments/13a4ufq/vite_keeps_giving_404_in_production/
+[2] https://community.render.com/t/react-router-not-working-after-deploying-vite-react-project/11103
+[3] https://answers.netlify.com/t/i-have-deployed-my-front-end-vite-react-application-and-getting-404-error-on-api-call/93225
+[4] https://stackoverflow.com/questions/72834388/vite-with-create-react-app-is-returning-404-error
+[5] https://github.com/vitejs/vite/issues/8904
