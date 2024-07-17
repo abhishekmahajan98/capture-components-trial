@@ -2,19 +2,21 @@ import React, { useState } from 'react';
 import { AgGridReact } from 'ag-grid-react';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
-import { Button, Modal, Form, Select, Table, Input, Space } from 'antd';
+import { Button, Modal, Form, Select, Table, Input, Space, DatePicker } from 'antd';
 import { ColDef } from 'ag-grid-community';
 import { FormInstance } from 'antd/lib/form';
+import moment from 'moment';
 
 const { Option } = Select;
 
 interface TableDataItem {
   key: string;
-  input1: string;
-  input2: string;
-  select1: string;
-  select2: string;
-  select3: string;
+  name: string;
+  association: string;
+  title: string;
+  comments: string;
+  lastEmployed: moment.Moment | null;
+  meetingDate: moment.Moment | null;
 }
 
 interface FormData {
@@ -82,8 +84,8 @@ const Page1: React.FC = () => {
     }
     for (let i = 0; i < tableData.length; i++) {
       const row = tableData[i];
-      if (!row.input1 || !row.input2 || !row.select1 || !row.select2 || !row.select3) {
-        return `All fields in row ${i + 1} are required.`;
+      if (!row.name || !row.association || !row.title || !row.comments || !row.meetingDate) {
+        return `All fields except Last Employed in row ${i + 1} are required.`;
       }
     }
     return null;
@@ -131,11 +133,11 @@ const Page1: React.FC = () => {
     setWriteUpIsModalOpen(false);
   };
 
-  const handleInputChange = (key: string, dataIndex: keyof TableDataItem, value: string): void => {
+  const handleInputChange = (key: string, dataIndex: keyof TableDataItem, value: string | moment.Moment | null): void => {
     const newData = [...tableData];
     const target = newData.find(item => item.key === key);
     if (target) {
-      target[dataIndex] = value;
+      target[dataIndex] = value as any;
       setTableData(newData);
     }
   };
@@ -148,113 +150,112 @@ const Page1: React.FC = () => {
   const handleAdd = (): void => {
     const newData: TableDataItem = {
       key: Date.now().toString(),
-      input1: '',
-      input2: '',
-      select1: '',
-      select2: '',
-      select3: '',
+      name: '',
+      association: '',
+      title: '',
+      comments: '',
+      lastEmployed: null,
+      meetingDate: null,
     };
     setTableData([...tableData, newData]);
   };
 
   const columns = [
     {
-      title: 'Input 1',
-      dataIndex: 'input1',
-      key: 'input1',
+      title: 'Name',
+      dataIndex: 'name',
+      key: 'name',
       render: (_: any, record: TableDataItem) => (
         <Form.Item
           style={{ margin: 0 }}
-          validateStatus={record.input1 ? '' : 'error'}
-          help={record.input1 ? '' : 'Required'}
+          validateStatus={record.name ? '' : 'error'}
+          help={record.name ? '' : 'Required'}
         >
           <Input 
-            value={record.input1} 
-            onChange={(e) => handleInputChange(record.key, 'input1', e.target.value)} 
+            value={record.name} 
+            onChange={(e) => handleInputChange(record.key, 'name', e.target.value)} 
           />
         </Form.Item>
       ),
     },
     {
-      title: 'Input 2',
-      dataIndex: 'input2',
-      key: 'input2',
+      title: 'Association',
+      dataIndex: 'association',
+      key: 'association',
       render: (_: any, record: TableDataItem) => (
         <Form.Item
           style={{ margin: 0 }}
-          validateStatus={record.input2 ? '' : 'error'}
-          help={record.input2 ? '' : 'Required'}
+          validateStatus={record.association ? '' : 'error'}
+          help={record.association ? '' : 'Required'}
         >
           <Input 
-            value={record.input2} 
-            onChange={(e) => handleInputChange(record.key, 'input2', e.target.value)} 
+            value={record.association} 
+            onChange={(e) => handleInputChange(record.key, 'association', e.target.value)} 
           />
         </Form.Item>
       ),
     },
     {
-      title: 'Select 1',
-      dataIndex: 'select1',
-      key: 'select1',
+      title: 'Title',
+      dataIndex: 'title',
+      key: 'title',
       render: (_: any, record: TableDataItem) => (
         <Form.Item
           style={{ margin: 0 }}
-          validateStatus={record.select1 ? '' : 'error'}
-          help={record.select1 ? '' : 'Required'}
+          validateStatus={record.title ? '' : 'error'}
+          help={record.title ? '' : 'Required'}
         >
-          <Select 
-            style={{ width: 120 }} 
-            value={record.select1} 
-            onChange={(value) => handleInputChange(record.key, 'select1', value)}
-          >
-            <Option value="option1">Option 1</Option>
-            <Option value="option2">Option 2</Option>
-            <Option value="option3">Option 3</Option>
-          </Select>
+          <Input 
+            value={record.title} 
+            onChange={(e) => handleInputChange(record.key, 'title', e.target.value)} 
+          />
         </Form.Item>
       ),
     },
     {
-      title: 'Select 2',
-      dataIndex: 'select2',
-      key: 'select2',
+      title: 'Comments',
+      dataIndex: 'comments',
+      key: 'comments',
       render: (_: any, record: TableDataItem) => (
         <Form.Item
           style={{ margin: 0 }}
-          validateStatus={record.select2 ? '' : 'error'}
-          help={record.select2 ? '' : 'Required'}
+          validateStatus={record.comments ? '' : 'error'}
+          help={record.comments ? '' : 'Required'}
         >
-          <Select 
-            style={{ width: 120 }} 
-            value={record.select2} 
-            onChange={(value) => handleInputChange(record.key, 'select2', value)}
-          >
-            <Option value="option1">Option 1</Option>
-            <Option value="option2">Option 2</Option>
-            <Option value="option3">Option 3</Option>
-          </Select>
+          <Input 
+            value={record.comments} 
+            onChange={(e) => handleInputChange(record.key, 'comments', e.target.value)} 
+          />
         </Form.Item>
       ),
     },
     {
-      title: 'Select 3',
-      dataIndex: 'select3',
-      key: 'select3',
+      title: 'Last Employed',
+      dataIndex: 'lastEmployed',
+      key: 'lastEmployed',
+      render: (_: any, record: TableDataItem) => (
+        <Form.Item style={{ margin: 0 }}>
+          <DatePicker 
+            value={record.lastEmployed} 
+            onChange={(date) => handleInputChange(record.key, 'lastEmployed', date)} 
+          />
+        </Form.Item>
+      ),
+    },
+    {
+      title: 'Meeting Date',
+      dataIndex: 'meetingDate',
+      key: 'meetingDate',
       render: (_: any, record: TableDataItem) => (
         <Form.Item
           style={{ margin: 0 }}
-          validateStatus={record.select3 ? '' : 'error'}
-          help={record.select3 ? '' : 'Required'}
+          validateStatus={record.meetingDate ? '' : 'error'}
+          help={record.meetingDate ? '' : 'Required'}
         >
-          <Select 
-            style={{ width: 120 }} 
-            value={record.select3} 
-            onChange={(value) => handleInputChange(record.key, 'select3', value)}
-          >
-            <Option value="option1">Option 1</Option>
-            <Option value="option2">Option 2</Option>
-            <Option value="option3">Option 3</Option>
-          </Select>
+          <DatePicker 
+            value={record.meetingDate} 
+            onChange={(date) => handleInputChange(record.key, 'meetingDate', date)} 
+          />
         </Form.Item>
       ),
     },
