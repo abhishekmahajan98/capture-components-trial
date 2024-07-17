@@ -2,7 +2,15 @@ import React from 'react';
 import { Form, Table, Button, Input, Select, Space } from 'antd';
 
 const { Option } = Select;
-
+interface TableDataItem {
+  key: string;
+  input1: string;
+  input2: string;
+  select1: string;
+  select2: string;
+  select3: string;
+}
+//   const [tableData, setTableData] = useState<TableDataItem[]>([]);
 interface TableDataItem {
   key: string;
   input1: string;
