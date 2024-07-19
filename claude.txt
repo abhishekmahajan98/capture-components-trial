@@ -1,0 +1,275 @@
+''' WEKHOOKS
+import requests
+import json
+
+def send_teams_message(webhook_url, message):
+    headers = {
+        'Content-Type': 'application/json'
+    }
+    payload = {
+        'text': message
+    }
+    response = requests.post(webhook_url, headers=headers, data=json.dumps(payload))
+    return response.status_code
+
+# Usage
+webhook_url = 'YOUR_WEBHOOK_URL_HERE'
+message = 'Hello from Python!'
+status_code = send_teams_message(webhook_url, message)
+print(f'Status code: {status_code}')
+
+'''
+''' GRAPH API
+Certainly, I'll provide a step-by-step guide on how to send data to a Teams channel using the Microsoft Graph API, along with the full Python code.
+
+
+
+```python
+import requests
+import msal
+
+# Azure AD app registration details
+CLIENT_ID = "YOUR_CLIENT_ID"
+CLIENT_SECRET = "YOUR_CLIENT_SECRET"
+TENANT_ID = "YOUR_TENANT_ID"
+
+# Microsoft Graph API endpoint
+GRAPH_API_ENDPOINT = 'https://graph.microsoft.com/v1.0'
+
+# Teams channel details
+TEAM_ID = "YOUR_TEAM_ID"
+CHANNEL_ID = "YOUR_CHANNEL_ID"
+
+def get_access_token():
+    app = msal.ConfidentialClientApplication(
+        CLIENT_ID,
+        authority=f"https://login.microsoftonline.com/{TENANT_ID}",
+        client_credential=CLIENT_SECRET,
+    )
+    
+    result = app.acquire_token_for_client(scopes=["https://graph.microsoft.com/.default"])
+    
+    if "access_token" in result:
+        return result["access_token"]
+    else:
+        print(result.get("error"))
+        print(result.get("error_description"))
+        print(result.get("correlation_id"))
+        return None
+
+def send_message_to_channel(access_token, message):
+    headers = {
+        'Authorization': f'Bearer {access_token}',
+        'Content-Type': 'application/json'
+    }
+    
+    payload = {
+        'body': {
+            'content': message
+        }
+    }
+    
+    response = requests.post(
+        f'{GRAPH_API_ENDPOINT}/teams/{TEAM_ID}/channels/{CHANNEL_ID}/messages',
+        headers=headers,
+        json=payload
+    )
+    
+    if response.status_code == 201:
+        print("Message sent successfully")
+    else:
+        print(f"Failed to send message. Status code: {response.status_code}")
+        print(f"Response: {response.text}")
+
+def main():
+    access_token = get_access_token()
+    if access_token:
+        message = "Hello from Python using Microsoft Graph API!"
+        send_message_to_channel(access_token, message)
+    else:
+        print("Failed to acquire access token")
+
+if __name__ == "__main__":
+    main()
+
+```
+
+Now, let's go through the steps to set up and use this code:
+
+1. Set up Azure AD App Registration:
+   a. Go to the Azure Portal (portal.azure.com)
+   b. Navigate to "Azure Active Directory" > "App registrations" > "New registration"
+   c. Give your app a name and register it
+   d. Note down the Application (client) ID and Directory (tenant) ID
+   e. Under "Certificates & secrets", create a new client secret and note it down
+
+2. Configure API Permissions:
+   a. In your app registration, go to "API permissions"
+   b. Add permission: Microsoft Graph > Application permissions
+   c. Search for and add: ChannelMessage.Send
+   d. Click on "Grant admin consent" for your organization
+
+3. Get Team and Channel IDs:
+   a. In Microsoft Teams, right-click on the channel and copy the link
+   b. The link will contain the Team ID and Channel ID in the format:
+      https://teams.microsoft.com/l/channel/CHANNEL_ID/General?groupId=TEAM_ID&tenantId=TENANT_ID
+
+4. Install required Python packages:
+   ```
+   pip install requests msal
+   ```
+
+5. Update the script with your details:
+   - Replace `YOUR_CLIENT_ID`, `YOUR_CLIENT_SECRET`, and `YOUR_TENANT_ID` with the values from step 1
+   - Replace `YOUR_TEAM_ID` and `YOUR_CHANNEL_ID` with the values from step 3
+
+6. Run the script:
+   ```
+   python your_script_name.py
+   ```
+
+This script does the following:
+
+1. Imports necessary libraries: `requests` for HTTP requests and `msal` for authentication.
+2. Defines constants for Azure AD app details and Microsoft Graph API endpoint.
+3. `get_access_token()` function acquires an access token using MSAL.
+4. `send_message_to_channel()` function sends a message to the specified Teams channel using the Graph API.
+5. `main()` function ties it all together, getting the token and sending a message.
+
+Remember to keep your client ID and secret secure. In a production environment, use environment variables or a secure secret management system to store these values.
+
+Would you like me to explain any part of this process or code in more detail?
+'''
+''' USING GRAPH API TO SEND TO GROUPS
+Certainly! You can send messages to a Teams group (also known as a team) using the Microsoft Graph API. This is slightly different from sending to a specific channel, as we'll be using the team's group chat. Here's how to do it:
+
+
+
+```python
+import requests
+import msal
+
+# Azure AD app registration details
+CLIENT_ID = "YOUR_CLIENT_ID"
+CLIENT_SECRET = "YOUR_CLIENT_SECRET"
+TENANT_ID = "YOUR_TENANT_ID"
+
+# Microsoft Graph API endpoint
+GRAPH_API_ENDPOINT = 'https://graph.microsoft.com/v1.0'
+
+# Teams group details
+TEAM_ID = "YOUR_TEAM_ID"
+
+def get_access_token():
+    app = msal.ConfidentialClientApplication(
+        CLIENT_ID,
+        authority=f"https://login.microsoftonline.com/{TENANT_ID}",
+        client_credential=CLIENT_SECRET,
+    )
+    
+    result = app.acquire_token_for_client(scopes=["https://graph.microsoft.com/.default"])
+    
+    if "access_token" in result:
+        return result["access_token"]
+    else:
+        print(result.get("error"))
+        print(result.get("error_description"))
+        print(result.get("correlation_id"))
+        return None
+
+def send_message_to_group(access_token, message):
+    headers = {
+        'Authorization': f'Bearer {access_token}',
+        'Content-Type': 'application/json'
+    }
+    
+    payload = {
+        'body': {
+            'content': message
+        }
+    }
+    
+    response = requests.post(
+        f'{GRAPH_API_ENDPOINT}/teams/{TEAM_ID}/sendActivityNotification',
+        headers=headers,
+        json={
+            'topic': {
+                'source': 'text',
+                'value': 'New message from Python script'
+            },
+            'activityType': 'taskCreated',
+            'previewText': {
+                'content': message[:50] + '...' if len(message) > 50 else message
+            },
+            'recipient': {
+                '@odata.type': 'microsoft.graph.teamMembers'
+            },
+            'templateParameters': [
+                {
+                    'name': 'taskName',
+                    'value': 'View message'
+                }
+            ]
+        }
+    )
+    
+    if response.status_code == 204:
+        print("Message sent successfully")
+    else:
+        print(f"Failed to send message. Status code: {response.status_code}")
+        print(f"Response: {response.text}")
+
+def main():
+    access_token = get_access_token()
+    if access_token:
+        message = "Hello from Python using Microsoft Graph API! This message is sent to the entire team."
+        send_message_to_group(access_token, message)
+    else:
+        print("Failed to acquire access token")
+
+if __name__ == "__main__":
+    main()
+
+```
+
+Here are the steps to set up and use this code:
+
+1. Follow steps 1-2 from the previous example to set up your Azure AD App Registration.
+
+2. Update API Permissions:
+   a. In your app registration, go to "API permissions"
+   b. Add permission: Microsoft Graph > Application permissions
+   c. Search for and add: TeamsActivity.Send.Group
+   d. Click on "Grant admin consent" for your organization
+
+3. Get the Team ID:
+   a. In Microsoft Teams, right-click on the team name and select "Get link to team"
+   b. The link will contain the Team ID in the format:
+      https://teams.microsoft.com/l/team/TEAM_ID/conversations?groupId=GROUP_ID&tenantId=TENANT_ID
+
+4. Install required Python packages (if you haven't already):
+   ```
+   pip install requests msal
+   ```
+
+5. Update the script with your details:
+   - Replace `YOUR_CLIENT_ID`, `YOUR_CLIENT_SECRET`, and `YOUR_TENANT_ID` with the values from your Azure AD App Registration
+   - Replace `YOUR_TEAM_ID` with the Team ID from step 3
+
+6. Run the script:
+   ```
+   python your_script_name.py
+   ```
+
+Key differences in this script compared to sending to a specific channel:
+
+1. We're using the `/teams/{teamId}/sendActivityNotification` endpoint instead of the channel messages endpoint.
+2. The payload structure is different. We're sending an "activity notification" which appears as a notification for all team members.
+3. The message appears as a notification with a preview, rather than a full message in a channel.
+
+This approach sends a notification to all members of the team. They'll receive a notification with the preview text, and can click on it to view the full message.
+
+Note that this method doesn't post a message directly into the team's conversation history. Instead, it sends a notification to all team members. If you need to post directly to the team's conversation, you would need to use the team's associated Group ID and post to the group's conversations, which requires different permissions and a slightly different approach.
+
+Would you like me to explain any part of this process or code in more detail?
+'''

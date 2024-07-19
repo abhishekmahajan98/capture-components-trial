@@ -5,7 +5,6 @@ import 'ag-grid-community/styles/ag-theme-alpine.css';
 import { Button, Modal, Form, Select, Table, Input, Space, DatePicker } from 'antd';
 import { ColDef } from 'ag-grid-community';
 import { FormInstance } from 'antd/lib/form';
-import moment from 'moment';
 
 const { Option } = Select;
 
