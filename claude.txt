@@ -396,3 +396,178 @@ const handleFormSubmit = (values: any) => {
 ```
 
 This implementation should resolve the type error and provide the functionality you requested. Let me know if you need any further clarification or assistance!
+
+
+new new 
+
+
+I apologize for the oversight. You're right to point out this type mismatch. Let's resolve this issue by correctly typing the `api` prop in the ButtonRenderer component. We'll need to make adjustments to both the ButtonRenderer and the MainComponent.
+
+Let's start by updating the ButtonRenderer:
+
+
+
+```tsx
+import React, { useState, forwardRef, useImperativeHandle } from 'react';
+import { Button } from 'antd';
+import { ICellRendererParams } from 'ag-grid-community';
+
+interface ButtonRendererProps extends ICellRendererParams {
+  onClick: (params: ICellRendererParams) => void;
+}
+
+export interface ButtonRendererRef {
+  setDisabled: (disabled: boolean) => void;
+  setSubmitted: (submitted: boolean) => void;
+}
+
+const ButtonRenderer = forwardRef<ButtonRendererRef, ButtonRendererProps>((props, ref) => {
+  const [isDisabled, setIsDisabled] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
+  const handleClick = () => {
+    props.onClick(props);
+  };
+
+  // Expose methods to update button state
+  useImperativeHandle(ref, () => ({
+    setDisabled: (disabled: boolean) => setIsDisabled(disabled),
+    setSubmitted: (submitted: boolean) => setIsSubmitted(submitted),
+  }));
+
+  return (
+    <Button
+      onClick={handleClick}
+      disabled={isDisabled}
+      type={isSubmitted ? 'primary' : 'default'}
+    >
+      {isSubmitted ? 'Submitted' : 'Open Form'}
+    </Button>
+  );
+});
+
+export default ButtonRenderer;
+
+```
+
+Now, let's update the MainComponent to use this new ButtonRenderer correctly:
+
+
+
+```tsx
+import React, { useState, useCallback, useRef } from 'react';
+import { AgGridReact } from 'ag-grid-react';
+import { ColDef, ICellRendererParams, GridReadyEvent } from 'ag-grid-community';
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-alpine.css';
+import ButtonRenderer, { ButtonRendererRef } from './ButtonRenderer';
+import FormModal from './FormModal';
+
+interface RowData {
+  id: number;
+  name: string;
+  age: number;
+}
+
+const MainComponent: React.FC = () => {
+  const gridRef = useRef<AgGridReact>(null);
+  const [rowData] = useState<RowData[]>([
+    { id: 1, name: 'John Doe', age: 30 },
+    { id: 2, name: 'Jane Smith', age: 25 },
+    // Add more data as needed
+  ]);
+
+  const [columnDefs] = useState<ColDef[]>([
+    { field: 'id' },
+    { field: 'name' },
+    { field: 'age' },
+    {
+      headerName: 'Actions',
+      cellRenderer: ButtonRenderer,
+      cellRendererParams: {
+        onClick: (params: ICellRendererParams) => handleButtonClick(params),
+      },
+    },
+  ]);
+
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedRow, setSelectedRow] = useState<ICellRendererParams | null>(null);
+
+  const handleButtonClick = useCallback(
+    (params: ICellRendererParams) => {
+      setSelectedRow(params);
+      setIsModalVisible(true);
+    },
+    []
+  );
+
+  const handleModalClose = () => {
+    setIsModalVisible(false);
+    setSelectedRow(null);
+  };
+
+  const handleFormSubmit = (values: any) => {
+    console.log('Form submitted:', values);
+    if (selectedRow && gridRef.current) {
+      const api = gridRef.current.api;
+      const node = api.getRowNode(selectedRow.rowIndex);
+      if (node) {
+        const cellRenderer = api.getCellRendererInstances({
+          rowNodes: [node],
+          columns: [selectedRow.column],
+        })[0] as ButtonRendererRef | undefined;
+        
+        if (cellRenderer) {
+          cellRenderer.setDisabled(true);
+          cellRenderer.setSubmitted(true);
+        }
+        
+        // Refresh the cell to reflect the changes
+        api.refreshCells({rowNodes: [node], force: true});
+      }
+    }
+    handleModalClose();
+  };
+
+  const onGridReady = (params: GridReadyEvent) => {
+    // You can perform any grid initialization here if needed
+  };
+
+  return (
+    <div className="ag-theme-alpine" style={{ height: 400, width: '100%' }}>
+      <AgGridReact
+        ref={gridRef}
+        rowData={rowData}
+        columnDefs={columnDefs}
+        onGridReady={onGridReady}
+      />
+      <FormModal
+        isVisible={isModalVisible}
+        onClose={handleModalClose}
+        onSubmit={handleFormSubmit}
+      />
+    </div>
+  );
+};
+
+export default MainComponent;
+
+```
+
+These changes address the type mismatch you encountered. Here's what we did:
+
+1. In the ButtonRenderer:
+   - Used `forwardRef` to create the component, allowing it to receive a ref from its parent.
+   - Defined a `ButtonRendererRef` interface to type the exposed methods.
+   - Used `useImperativeHandle` to expose methods for updating the button state.
+
+2. In the MainComponent:
+   - Added a `ref` to the AgGridReact component to access its API.
+   - Updated the `handleFormSubmit` function to use the grid API to find the correct cell renderer instance and update its state.
+   - Used type assertion to cast the cell renderer instance to `ButtonRendererRef`.
+
+These changes ensure type safety and should resolve the error you encountered. The button state (disabled and submitted) can now be controlled from the parent component through the AG Grid API without any type mismatches.
+
+This implementation should resolve the type error and provide the functionality you requested. The buttons in each row can now be updated individually after form submission.
+
+Let me know if you need any further clarification or assistance!
