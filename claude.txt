@@ -224,3 +224,175 @@ To use this in your Vite React TypeScript app:
 This solution provides a reusable and type-safe implementation for adding a button to each row in AG Grid, opening an Ant Design modal with a form, and updating the button state upon successful form submission.
 
 Would you like me to explain any part of this implementation in more detail?
+
+
+NEW
+
+
+I apologize for the confusion. You're right to point out that error. The issue is with the type definition for the `cellRenderer` property. Let's fix this by using the correct types from AG Grid. 
+
+Here's how we can correct the column definition:
+
+
+
+```tsx
+import React, { useState, useCallback } from 'react';
+import { AgGridReact } from 'ag-grid-react';
+import { ColDef, ICellRendererParams } from 'ag-grid-community';
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-alpine.css';
+import ButtonRenderer from './ButtonRenderer';
+import FormModal from './FormModal';
+
+interface RowData {
+  id: number;
+  name: string;
+  age: number;
+}
+
+const MainComponent: React.FC = () => {
+  const [rowData] = useState<RowData[]>([
+    { id: 1, name: 'John Doe', age: 30 },
+    { id: 2, name: 'Jane Smith', age: 25 },
+    // Add more data as needed
+  ]);
+
+  const [columnDefs] = useState<ColDef[]>([
+    { field: 'id' },
+    { field: 'name' },
+    { field: 'age' },
+    {
+      headerName: 'Actions',
+      cellRenderer: ButtonRenderer,
+      cellRendererParams: {
+        onClick: (params: ICellRendererParams) => handleButtonClick(params),
+      },
+    },
+  ]);
+
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedRow, setSelectedRow] = useState<ICellRendererParams | null>(null);
+
+  const handleButtonClick = useCallback(
+    (params: ICellRendererParams) => {
+      setSelectedRow(params);
+      setIsModalVisible(true);
+    },
+    []
+  );
+
+  const handleModalClose = () => {
+    setIsModalVisible(false);
+    setSelectedRow(null);
+  };
+
+  const handleFormSubmit = (values: any) => {
+    console.log('Form submitted:', values);
+    if (selectedRow && selectedRow.data) {
+      // Update the row data here if needed
+      // For example: selectedRow.data.submitted = true;
+      // Then refresh the grid:
+      // params.api.refreshCells({rowNodes: [selectedRow.node], force: true});
+    }
+    handleModalClose();
+  };
+
+  return (
+    <div className="ag-theme-alpine" style={{ height: 400, width: '100%' }}>
+      <AgGridReact
+        rowData={rowData}
+        columnDefs={columnDefs}
+      />
+      <FormModal
+        isVisible={isModalVisible}
+        onClose={handleModalClose}
+        onSubmit={handleFormSubmit}
+      />
+    </div>
+  );
+};
+
+export default MainComponent;
+
+```
+
+Now, let's update the ButtonRenderer component to match these changes:
+
+
+
+```tsx
+import React, { useState } from 'react';
+import { Button } from 'antd';
+import { ICellRendererParams } from 'ag-grid-community';
+
+interface ButtonRendererProps extends ICellRendererParams {
+  onClick: (params: ICellRendererParams) => void;
+}
+
+const ButtonRenderer: React.FC<ButtonRendererProps> = (props) => {
+  const [isDisabled, setIsDisabled] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
+  const handleClick = () => {
+    props.onClick(props);
+  };
+
+  // Expose methods to update button state
+  React.useImperativeHandle(props.api, () => ({
+    setDisabled: (disabled: boolean) => setIsDisabled(disabled),
+    setSubmitted: (submitted: boolean) => setIsSubmitted(submitted),
+  }));
+
+  return (
+    <Button
+      onClick={handleClick}
+      disabled={isDisabled}
+      type={isSubmitted ? 'primary' : 'default'}
+    >
+      {isSubmitted ? 'Submitted' : 'Open Form'}
+    </Button>
+  );
+};
+
+export default ButtonRenderer;
+
+```
+
+These changes address the type error you encountered. Here's what we did:
+
+1. In the MainComponent:
+   - Imported `ColDef` and `ICellRendererParams` from 'ag-grid-community'.
+   - Defined the `RowData` interface for better type checking.
+   - Updated `columnDefs` to use `ColDef[]` type.
+   - Changed `cellRenderer: 'buttonRenderer'` to `cellRenderer: ButtonRenderer`.
+   - Updated `handleButtonClick` to use `ICellRendererParams`.
+
+2. In the ButtonRenderer:
+   - Updated the props interface to extend `ICellRendererParams`.
+   - Used `React.useImperativeHandle` to expose methods for updating the button state.
+
+These changes ensure type safety and should resolve the error you encountered. The button state (disabled and submitted) can now be controlled from the parent component through the AG Grid API.
+
+To update the button state after form submission, you can modify the `handleFormSubmit` function in the MainComponent like this:
+
+```typescript
+const handleFormSubmit = (values: any) => {
+  console.log('Form submitted:', values);
+  if (selectedRow && selectedRow.api) {
+    const params = selectedRow as ICellRendererParams;
+    const buttonInstance = params.api.getCellRendererInstances({
+      rowNodes: [params.node],
+      columns: [params.column],
+    })[0];
+    if (buttonInstance) {
+      (buttonInstance as any).setDisabled(true);
+      (buttonInstance as any).setSubmitted(true);
+    }
+    // Refresh the cell to reflect the changes
+    params.api.refreshCells({rowNodes: [params.node], force: true});
+  }
+  handleModalClose();
+};
+```
+
+This implementation should resolve the type error and provide the functionality you requested. Let me know if you need any further clarification or assistance!
