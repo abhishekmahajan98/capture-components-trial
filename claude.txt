@@ -62,3 +62,114 @@ export default defineConfig({
 After making these changes, rebuild your React app and restart your FastAPI server. You should now be able to reload pages on any route without getting 404 errors.
 
 Would you like me to explain any part of this solution in more detail?
+
+
+NEW
+
+Yes, this approach should work for Azure App Service in production as well, but you'll need to make a few adjustments to ensure it works correctly in that environment. Here's what you need to consider:
+
+1. Web.config file:
+   Azure App Service uses IIS (Internet Information Services) to serve applications. For Python applications, it uses a web.config file to configure the server. You'll need to create a `web.config` file in your project root to ensure proper routing.
+
+
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <system.webServer>
+    <rewrite>
+      <rules>
+        <rule name="Static Files" stopProcessing="true">
+          <match url="^(?:assets/|favicon\.ico|manifest\.json)" />
+          <action type="None" />
+        </rule>
+        <rule name="ReactRouter Routes" stopProcessing="true">
+          <match url=".*" />
+          <conditions logicalGrouping="MatchAll">
+            <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="true" />
+            <add input="{REQUEST_FILENAME}" matchType="IsDirectory" negate="true" />
+          </conditions>
+          <action type="Rewrite" url="index.html" />
+        </rule>
+      </rules>
+    </rewrite>
+    <staticContent>
+      <mimeMap fileExtension=".json" mimeType="application/json" />
+    </staticContent>
+  </system.webServer>
+</configuration>
+
+```
+
+This `web.config` file does the following:
+- It allows direct access to static files in the `assets` directory and common root files like `favicon.ico` and `manifest.json`.
+- For all other routes, it rewrites the request to `index.html`, allowing your React router to handle the routing.
+- It also adds a MIME type for .json files, which can be necessary for some static JSON assets.
+
+2. Adjust your FastAPI code:
+   You'll need to modify your FastAPI code slightly to work with the App Service environment. Here's an updated version:
+
+
+
+```python
+from fastapi import FastAPI, Request
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+import os
+
+app = FastAPI()
+
+# Get the directory of the current script
+current_dir = os.path.dirname(os.path.realpath(__file__))
+
+# Construct the path to the 'dist' directory
+dist_dir = os.path.join(current_dir, "dist")
+
+# Mount your static files
+app.mount("/assets", StaticFiles(directory=os.path.join(dist_dir, "assets")), name="assets")
+
+@app.middleware("http")
+async def serve_spa(request: Request, call_next):
+    response = await call_next(request)
+    if response.status_code == 404:
+        return FileResponse(os.path.join(dist_dir, 'index.html'))
+    return response
+
+# Serve static files
+@app.get("/{full_path:path}")
+async def serve_static(full_path: str):
+    file_path = os.path.join(dist_dir, full_path)
+    if os.path.exists(file_path):
+        return FileResponse(file_path)
+    return FileResponse(os.path.join(dist_dir, 'index.html'))
+
+# For Azure App Service
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))
+
+```
+
+The main changes in this updated code are:
+- We use `os.path.dirname(os.path.realpath(__file__))` to get the current directory, which is more reliable in different environments.
+- We construct the path to the `dist` directory relative to the current script.
+- We add a `__main__` block to run the app with uvicorn when deployed to App Service.
+
+3. Requirements:
+   Make sure your `requirements.txt` file includes all necessary dependencies, including `fastapi`, `uvicorn`, and any other libraries you're using.
+
+4. Deployment:
+   When deploying to Azure App Service:
+   - Make sure your app's startup command is set correctly. It should be something like:
+     ```
+     gunicorn -w 4 -k uvicorn.workers.UvicornWorker main:app
+     ```
+   - Replace `main` with the name of your Python file if it's different.
+   - Ensure that your `dist` directory (containing your built React app) is included in your deployment.
+
+5. Environment Variables:
+   If your app uses any environment variables, make sure to set them in the Azure App Service Configuration.
+
+By implementing these changes, your Vite React TypeScript app served by FastAPI should work correctly both in development and when deployed to Azure App Service in production. The SPA routing will work as expected, allowing page reloads without 404 errors.
+
+Would you like me to elaborate on any part of this setup or explain how to implement any specific step?
