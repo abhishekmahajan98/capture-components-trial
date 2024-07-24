@@ -40,6 +40,8 @@ const Page3 = () => {
       // Simulating an API call
       setTimeout(() => {
         // Update rowData to reflect the submitted state
+        // commented below is if you need to make the row vanish on successful complete
+        //setRowData(prevRowData => prevRowData.filter(row => row.company_id !== selectedRow.company_id));
         setRowData(rowData.map(row => 
           row.company_id === selectedRow.company_id ? { ...row, ...values, submitted: true } : row
         ));
