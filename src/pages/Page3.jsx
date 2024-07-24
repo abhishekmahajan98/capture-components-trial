@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { AgGridReact } from 'ag-grid-react';
-import { Modal, Form, Input, InputNumber, Button, List } from 'antd';
+import { Modal, Form, Input, InputNumber, Button, message } from 'antd';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
 
@@ -14,8 +14,6 @@ const Page3 = () => {
   const [selectedRow, setSelectedRow] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [form] = Form.useForm();
-  const [queue, setQueue] = useState([]);
-  const [isQueueModalVisible, setIsQueueModalVisible] = useState(false);
 
   const columnDefs = [
     { field: 'recommendation_score', headerName: 'Recommendation Score', filter: 'agNumberColumnFilter' },
@@ -33,20 +31,21 @@ const Page3 = () => {
   const onRowClicked = useCallback((event) => {
     const rowData = event.data;
     setSelectedRow(rowData);
-    form.setFieldsValue(rowData);  // Set form values with the selected row data
+    form.setFieldsValue(rowData);
     setIsModalVisible(true);
   }, [form]);
 
   const handleModalOk = () => {
     form.validateFields().then((values) => {
-      const updatedQueue = [...queue, { ...selectedRow, ...values }];
-      setQueue(updatedQueue);
-      setIsModalVisible(false);
-
-      // Update rowData to reflect the queued state
-      setRowData(rowData.map(row => 
-        row.company_id === selectedRow.company_id ? { ...row, queued: true } : row
-      ));
+      // Simulating an API call
+      setTimeout(() => {
+        // Update rowData to reflect the submitted state
+        setRowData(rowData.map(row => 
+          row.company_id === selectedRow.company_id ? { ...row, ...values, submitted: true } : row
+        ));
+        setIsModalVisible(false);
+        message.success('Submission successful!');
+      }, 1000);
     });
   };
 
@@ -54,34 +53,9 @@ const Page3 = () => {
     setIsModalVisible(false);
   };
 
-  const openQueue = () => {
-    setIsQueueModalVisible(true);
-  };
-
-  const removeFromQueue = (item) => {
-    const updatedQueue = queue.filter(queueItem => queueItem.company_id !== item.company_id);
-    setQueue(updatedQueue);
-
-    // Update rowData to reflect the removed queued state
-    setRowData(rowData.map(row => 
-      row.company_id === item.company_id ? { ...row, queued: false } : row
-    ));
-  };
-
-  const submitQueue = () => {
-    console.log(JSON.stringify(queue));
-    // Here you would typically send this data to a server
-    alert('Queue submitted!');
-    setQueue([]);
-    setIsQueueModalVisible(false);
-
-    // Reset all rows' queued state
-    setRowData(rowData.map(row => ({ ...row, queued: false })));
-  };
-
   const getRowStyle = params => {
-    if (params.data.queued) {
-      return { backgroundColor: '#e6f7ff' };
+    if (params.data.submitted) {
+      return { backgroundColor: '#d9f7be' }; // Light green color for submitted rows
     }
   };
 
@@ -97,8 +71,6 @@ const Page3 = () => {
           getRowStyle={getRowStyle}
         />
       </div>
-
-      <Button onClick={openQueue} style={{ marginTop: '20px' }}>Open Queue</Button>
 
       <Modal
         title="Edit Company"
@@ -120,34 +92,6 @@ const Page3 = () => {
             <InputNumber step={0.01} formatter={value => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} parser={value => value.replace(/\$\s?|(,*)/g, '')} />
           </Form.Item>
         </Form>
-      </Modal>
-
-      <Modal
-        title="Queue"
-        visible={isQueueModalVisible}
-        onOk={submitQueue}
-        onCancel={() => setIsQueueModalVisible(false)}
-        footer={[
-          <Button key="cancel" onClick={() => setIsQueueModalVisible(false)}>
-            Cancel
-          </Button>,
-          <Button key="submit" type="primary" onClick={submitQueue}>
-            Submit Queue
-          </Button>,
-        ]}
-      >
-        <List
-          dataSource={queue}
-          renderItem={item => (
-            <List.Item
-              actions={[
-                <Button onClick={() => removeFromQueue(item)}>Remove</Button>
-              ]}
-            >
-              {item.company_name} - Score: {item.recommendation_score}, US Income: ${item.us_income.toFixed(2)}, Global Income: ${item.global_income.toFixed(2)}
-            </List.Item>
-          )}
-        />
       </Modal>
     </div>
   );

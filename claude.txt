@@ -57,7 +57,7 @@ Here's an explanation of the changes made:
 7. The response from the backend is returned as JSON.
 
 8. Error handling is implemented to catch any HTTP errors and raise an HTTPException if something goes wrong.
-
+s
 Note that you'll need to replace `"http://your-backend-url"` with the actual URL of your backend service.
 
 Also, notice that I changed the HTTP method from `GET` to `POST` for both the middleware and backend routes. This is because you're sending form data and files, which is typically done with a POST request.
