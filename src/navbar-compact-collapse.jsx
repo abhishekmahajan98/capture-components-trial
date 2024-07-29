@@ -29,6 +29,11 @@ const items = [
     label: <Link to="/page3">Page 3</Link>,
   },
   {
+    key: '4',
+    icon: <ContainerOutlined />,
+    label: <Link to="/page4">Pending Actions</Link>,
+  },
+  {
     key: 'sub1',
     label: 'Navigation One',
     icon: <MailOutlined />,
