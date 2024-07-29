@@ -1,65 +1,84 @@
-To send the request from the middleware to the backend, you'll need to make an HTTP request from your middleware to your backend endpoint. Here's how you can modify your middleware function to achieve this:
+import React, { useState } from 'react';
+import { Table, Input, Button, message } from 'antd';
+import { ColumnsType } from 'antd/es/table';
 
+interface DataType {
+  key: number;
+  name: string;
+  age: number;
+  address: string;
+  phone: string;
+}
 
+const TableWithInputs: React.FC = () => {
+  const [data, setData] = useState<DataType[]>([
+    { key: 1, name: 'John Brown', age: 32, address: '', phone: '' },
+    { key: 2, name: 'Jim Green', age: 42, address: '', phone: '' },
+    { key: 3, name: 'Joe Black', age: 32, address: '', phone: '' },
+  ]);
 
-```python
-from fastapi import APIRouter, Form, File, UploadFile, HTTPException
-from typing import List
-import httpx
-import asyncio
+  const handleInputChange = (key: number, dataIndex: keyof DataType, value: string) => {
+    const newData = [...data];
+    const target = newData.find(item => item.key === key);
+    if (target) {
+      target[dataIndex] = value;
+      setData(newData);
+    }
+  };
 
-router = APIRouter()
+  const columns: ColumnsType<DataType> = [
+    {
+      title: 'Name',
+      dataIndex: 'name',
+      key: 'name',
+    },
+    {
+      title: 'Age',
+      dataIndex: 'age',
+      key: 'age',
+    },
+    {
+      title: 'Address',
+      dataIndex: 'address',
+      key: 'address',
+      render: (text: string, record: DataType) => (
+        <Input
+          value={text}
+          onChange={e => handleInputChange(record.key, 'address', e.target.value)}
+        />
+      ),
+    },
+    {
+      title: 'Phone',
+      dataIndex: 'phone',
+      key: 'phone',
+      render: (text: string, record: DataType) => (
+        <Input
+          value={text}
+          onChange={e => handleInputChange(record.key, 'phone', e.target.value)}
+        />
+      ),
+    },
+  ];
 
-BACKEND_URL = "http://your-backend-url"  # Replace with your actual backend URL
+  const handleSubmit = () => {
+    const hasEmptyInputs = data.some(item => !item.address || !item.phone);
+    if (hasEmptyInputs) {
+      message.error('Please fill in all input fields');
+    } else {
+      message.success('Form submitted successfully');
+      console.log('Submitted data:', data);
+    }
+  };
 
-@router.post('/middleware/{upn}')
-async def submit_middleware(upn: str, form_data: str = Form(...), fileList: List[UploadFile] = File(...)):
-    try:
-        async with httpx.AsyncClient() as client:
-            # Prepare the form data
-            data = {"form_data": form_data}
-            
-            # Prepare the files
-            files = [("fileList", (file.filename, file.file, file.content_type)) for file in fileList]
-            
-            # Add any additional headers you need
-            headers = {"X-Custom-Header": "Some-Value"}
-            
-            # Make the request to the backend
-            response = await client.post(
-                f"{BACKEND_URL}/{upn}",
-                data=data,
-                files=files,
-                headers=headers
-            )
-            
-            # Return the response from the backend
-            return response.json()
-    except httpx.HTTPError as e:
-        raise HTTPException(status_code=500, detail=f"Error forwarding request: {str(e)}")
+  return (
+    <div>
+      <Table columns={columns} dataSource={data} pagination={false} />
+      <Button onClick={handleSubmit} type="primary" style={{ marginTop: 16 }}>
+        Submit
+      </Button>
+    </div>
+  );
+};
 
-```
-
-Here's an explanation of the changes made:
-
-1. We're using `httpx` library for making asynchronous HTTP requests. You'll need to install it with `pip install httpx`.
-
-2. The middleware function is now asynchronous (`async def`) to allow for non-blocking HTTP requests.
-
-3. We're using an `AsyncClient` from `httpx` to make the request to the backend.
-
-4. The form data and files are prepared separately. The `form_data` is added to a dictionary, and the files are prepared as a list of tuples.
-
-5. We're adding a custom header as an example. You can modify this as needed.
-
-6. The request is made to the backend using the `post` method of the client, including the prepared data, files, and headers.
-
-7. The response from the backend is returned as JSON.
-
-8. Error handling is implemented to catch any HTTP errors and raise an HTTPException if something goes wrong.
-s
-Note that you'll need to replace `"http://your-backend-url"` with the actual URL of your backend service.
-
-Also, notice that I changed the HTTP method from `GET` to `POST` for both the middleware and backend routes. This is because you're sending form data and files, which is typically done with a POST request.
-
-Would you like me to explain any part of this code in more detail?
+export default TableWithInputs;
