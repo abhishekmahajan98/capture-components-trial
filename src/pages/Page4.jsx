@@ -1,69 +1,73 @@
 import React, { useState } from 'react';
-import { AgGridReact } from 'ag-grid-react';
-import { Modal, Button, Form, Input, DatePicker } from 'antd';
-import 'ag-grid-community/styles/ag-grid.css';
-import 'ag-grid-community/styles/ag-theme-alpine.css';
+import { Table, Input, Button, message } from 'antd';
 
 const Page4 = () => {
-  const [rowData] = useState([
-    { companyName: 'Company A', meetingType: 'Annual', meetingDate: '2023-07-15', voteCutoff: '2023-07-10' },
-    { companyName: 'Company B', meetingType: 'Special', meetingDate: '2023-08-01', voteCutoff: '2023-07-25' },
-    // Add more data as needed
+  const [data, setData] = useState([
+    { key: 1, name: 'John Brown', age: 32, address: '', phone: '' },
+    { key: 2, name: 'Jim Green', age: 42, address: '', phone: '' },
+    { key: 3, name: 'Joe Black', age: 32, address: '', phone: '' },
   ]);
 
-  const [columnDefs] = useState([
-    { field: 'companyName', headerName: 'Company Name' },
-    { field: 'meetingType', headerName: 'Meeting Type' },
-    { field: 'meetingDate', headerName: 'Meeting Date' },
-    { field: 'voteCutoff', headerName: 'Vote Cutoff' },
+  const handleInputChange = (key, dataIndex, value) => {
+    const newData = [...data];
+    const target = newData.find(item => item.key === key);
+    if (target) {
+      target[dataIndex] = value;
+      setData(newData);
+    }
+  };
+
+  const columns = [
     {
-      headerName: 'Actions',
-      cellRenderer: (params) => (
-        <Button onClick={() => handleOpenModal(params.data)}>View/Edit</Button>
+      title: 'Name',
+      dataIndex: 'name',
+      key: 'name',
+    },
+    {
+      title: 'Age',
+      dataIndex: 'age',
+      key: 'age',
+    },
+    {
+      title: 'Address',
+      dataIndex: 'address',
+      key: 'address',
+      render: (text, record) => (
+        <Input
+          value={text}
+          onChange={e => handleInputChange(record.key, 'address', e.target.value)}
+        />
       ),
     },
-  ]);
+    {
+      title: 'Phone',
+      dataIndex: 'phone',
+      key: 'phone',
+      render: (text, record) => (
+        <Input
+          value={text}
+          onChange={e => handleInputChange(record.key, 'phone', e.target.value)}
+        />
+      ),
+    },
+  ];
 
-  const [modalVisible, setModalVisible] = useState(false);
-  const [selectedRow, setSelectedRow] = useState(null);
-
-  const handleOpenModal = (rowData) => {
-    setSelectedRow(rowData);
-    setModalVisible(true);
-  };
-
-  const handleCloseModal = () => {
-    setModalVisible(false);
-    setSelectedRow(null);
-  };
-
-  const handleFormSubmit = (values) => {
-    console.log('Form submitted:', values);
-    handleCloseModal();
+  const handleSubmit = () => {
+    const hasEmptyInputs = data.some(item => !item.address || !item.phone);
+    if (hasEmptyInputs) {
+      message.error('Please fill in all input fields');
+    } else {
+      message.success('Form submitted successfully');
+      console.log('Submitted data:', data);
+    }
   };
 
   return (
     <div>
-      <div className="ag-theme-alpine" style={{ height: 400, width: '100%' }}>
-        <AgGridReact
-          rowData={rowData}
-          columnDefs={columnDefs}
-          pagination={true}
-        />
-      </div>
-
-      <Modal
-        title="Row Details"
-        visible={modalVisible}
-        onCancel={handleCloseModal}
-        footer={null}
-      >
-        {selectedRow && (
-          <Form onFinish={handleFormSubmit} initialValues={selectedRow}>
-            
-          </Form>
-        )}
-      </Modal>
+      <Table columns={columns} dataSource={data} pagination={false} />
+      <Button onClick={handleSubmit} type="primary" style={{ marginTop: 16 }}>
+        Submit
+      </Button>
     </div>
   );
 };
