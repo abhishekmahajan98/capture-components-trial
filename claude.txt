@@ -1,84 +1,124 @@
-import React, { useState } from 'react';
-import { Table, Input, Button, message } from 'antd';
-import { ColumnsType } from 'antd/es/table';
+To implement a custom filter for multiple categorical values in an ag-Grid column within your Vite React app, you'll need to create a custom filter component. Here's a step-by-step guide to achieve this:
 
-interface DataType {
-  key: number;
-  name: string;
-  age: number;
-  address: string;
-  phone: string;
-}
+1. First, let's create a custom filter component:
 
-const TableWithInputs: React.FC = () => {
-  const [data, setData] = useState<DataType[]>([
-    { key: 1, name: 'John Brown', age: 32, address: '', phone: '' },
-    { key: 2, name: 'Jim Green', age: 42, address: '', phone: '' },
-    { key: 3, name: 'Joe Black', age: 32, address: '', phone: '' },
-  ]);
 
-  const handleInputChange = (key: number, dataIndex: keyof DataType, value: string) => {
-    const newData = [...data];
-    const target = newData.find(item => item.key === key);
-    if (target) {
-      target[dataIndex] = value;
-      setData(newData);
-    }
+
+```jsx
+import React, { useState, useEffect } from 'react';
+
+const CustomMultiSelectFilter = (props) => {
+  const [selectedValues, setSelectedValues] = useState([]);
+  const [availableValues, setAvailableValues] = useState([]);
+
+  useEffect(() => {
+    // Get unique values from the column
+    const uniqueValues = [...new Set(props.api.getColumnDefs()
+      .find(col => col.field === props.column.colId)
+      .cellRendererParams.values)];
+    setAvailableValues(uniqueValues);
+  }, []);
+
+  const onValueChange = (event) => {
+    const value = event.target.value;
+    const newSelectedValues = event.target.checked
+      ? [...selectedValues, value]
+      : selectedValues.filter(v => v !== value);
+    
+    setSelectedValues(newSelectedValues);
+    props.filterChangedCallback();
   };
 
-  const columns: ColumnsType<DataType> = [
-    {
-      title: 'Name',
-      dataIndex: 'name',
-      key: 'name',
-    },
-    {
-      title: 'Age',
-      dataIndex: 'age',
-      key: 'age',
-    },
-    {
-      title: 'Address',
-      dataIndex: 'address',
-      key: 'address',
-      render: (text: string, record: DataType) => (
-        <Input
-          value={text}
-          onChange={e => handleInputChange(record.key, 'address', e.target.value)}
-        />
-      ),
-    },
-    {
-      title: 'Phone',
-      dataIndex: 'phone',
-      key: 'phone',
-      render: (text: string, record: DataType) => (
-        <Input
-          value={text}
-          onChange={e => handleInputChange(record.key, 'phone', e.target.value)}
-        />
-      ),
-    },
-  ];
+  const isFilterActive = () => {
+    return selectedValues.length > 0;
+  };
 
-  const handleSubmit = () => {
-    const hasEmptyInputs = data.some(item => !item.address || !item.phone);
-    if (hasEmptyInputs) {
-      message.error('Please fill in all input fields');
+  const doesFilterPass = (params) => {
+    return selectedValues.includes(params.data[props.column.colId]);
+  };
+
+  const getModel = () => {
+    return { values: selectedValues };
+  };
+
+  const setModel = (model) => {
+    if (model) {
+      setSelectedValues(model.values);
     } else {
-      message.success('Form submitted successfully');
-      console.log('Submitted data:', data);
+      setSelectedValues([]);
     }
   };
 
   return (
     <div>
-      <Table columns={columns} dataSource={data} pagination={false} />
-      <Button onClick={handleSubmit} type="primary" style={{ marginTop: 16 }}>
-        Submit
-      </Button>
+      {availableValues.map(value => (
+        <div key={value}>
+          <label>
+            <input
+              type="checkbox"
+              value={value}
+              checked={selectedValues.includes(value)}
+              onChange={onValueChange}
+            />
+            {value}
+          </label>
+        </div>
+      ))}
     </div>
   );
 };
 
-export default TableWithInputs;
+export default CustomMultiSelectFilter;
+
+```
+
+2. Now, let's update your ag-Grid column definition to use this custom filter:
+
+
+
+```jsx
+const columnDefs = [
+  // ... other columns
+  {
+    field: 'status',
+    headerName: 'Status',
+    filter: CustomMultiSelectFilter,
+    filterParams: {
+      values: ['Active', 'Inactive', 'Pending', 'Completed'], // Add your status values here
+    },
+  },
+  // ... other columns
+];
+```
+
+3. Make sure to import the custom filter component in your main component file:
+
+```jsx
+import CustomMultiSelectFilter from './CustomMultiSelectFilter';
+```
+
+4. Update your ag-Grid configuration to enable filtering:
+
+```jsx
+<AgGridReact
+  columnDefs={columnDefs}
+  rowData={rowData}
+  defaultColDef={{
+    filter: true,
+    floatingFilter: true,
+  }}
+/>
+```
+
+This implementation allows users to select multiple status values, and the grid will show only the rows that match the selected statuses.
+
+The custom filter component (`CustomMultiSelectFilter`) does the following:
+
+1. It fetches unique values from the column on initial render.
+2. It provides checkboxes for each unique value.
+3. It keeps track of selected values and updates the filter accordingly.
+4. It implements the necessary methods for ag-Grid's filtering system (`isFilterActive`, `doesFilterPass`, `getModel`, and `setModel`).
+
+Remember to style your component as needed to match your application's design.
+
+Would you like me to explain any part of this implementation in more detail?
